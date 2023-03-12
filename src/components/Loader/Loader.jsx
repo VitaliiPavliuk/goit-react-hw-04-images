@@ -1,7 +1,6 @@
-import React from 'react';
 import { StyledLoader } from './Loader.styled';
 
-function Loader() {
+export const Loader = () => {
   return (
     <StyledLoader>
       <div className="lds-ellipsis">
@@ -12,6 +11,4 @@ function Loader() {
       </div>
     </StyledLoader>
   );
-}
-
-export default Loader;
+};

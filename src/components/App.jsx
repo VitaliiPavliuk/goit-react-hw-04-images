@@ -1,83 +1,71 @@
-import { Component } from 'react';
+import { useEffect, useState } from 'react';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 import { PER_PAGE, requestImages } from 'services/api';
 import { LoadMoreBtn } from './Button/Button';
 import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Searchbar } from './Searchbar/Searchbar';
-import Loader from './Loader/Loader';
+import { Loader } from './Loader/Loader';
 
-export class App extends Component {
-  state = {
-    query: '',
-    page: 1,
-    images: [],
-    isMore: false,
-    isLoading: false,
-    error: null,
+export const App = () => {
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [images, setImages] = useState([]);
+  const [isMore, setIsMore] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleLoadMore = () => {
+    setPage(page + 1);
   };
 
-  handleLoadMore = () => {
-    this.setState(prev => ({ page: prev.page + 1 }));
+  const handleSetSearchQuery = searchTerm => {
+    setQuery(searchTerm);
+    setPage(1);
+    setImages([]);
+    setIsMore(false);
   };
 
-  handleSetSearchQuery = searchTerm => {
-    this.setState({ query: searchTerm, page: 1, images: [], isMore: false });
-  };
-
-  componentDidUpdate(_, prevState) {
-    if (this.state.query === '') {
-      Notify.failure('Please enter a search query.');
+  useEffect(() => {
+    if (query === '') {
       return;
     }
+    const fetchImages = async () => {
+      try {
+        setIsLoading(true);
 
-    if (
-      prevState.query !== this.state.query ||
-      prevState.page !== this.state.page
-    ) {
-      const fetchImages = async () => {
-        try {
-          this.setState({ isLoading: true });
+        const fetchedImages = await requestImages(query, page);
 
-          const images = await requestImages(this.state.query, this.state.page);
-
-          if (images.totalHits === 0) {
-            Notify.failure(
-              'Sorry, there are no images matching your search query. Please try again.'
-            );
-            return;
-          }
-
-          this.setState({
-            isMore: images.totalHits - this.state.page * PER_PAGE > 0,
-            images: [...this.state.images, ...images.hits],
-          });
-        } catch (error) {
-          this.setState({ error: error.message });
-        } finally {
-          this.setState({ isLoading: false });
+        if (fetchedImages.totalHits === 0) {
+          Notify.failure(
+            'Sorry, there are no images matching your search query. Please try again.'
+          );
+          return;
         }
-      };
 
-      fetchImages();
-    }
-  }
+        setIsMore(fetchedImages.totalHits - page * PER_PAGE > 0);
+        setImages([...images, ...fetchedImages.hits]);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  render() {
-    return (
-      <div className="App">
-        <Searchbar onSubmit={this.handleSetSearchQuery} />
+    fetchImages();
 
-        {this.state.isLoading && <Loader />}
-        {this.state.error !== null && (
-          <p>Oops, some error occured... {this.state.error}</p>
-        )}
+    // eslint-disable-next-line
+  }, [query, page]);
 
-        <ImageGallery images={this.state.images} />
-        {this.state.isMore && (
-          <LoadMoreBtn handleLoadMore={this.handleLoadMore} />
-        )}
-      </div>
-    );
-  }
-}
+  return (
+    <div className="App">
+      <Searchbar onSubmit={handleSetSearchQuery} />
+
+      {isLoading && <Loader />}
+      {error !== null && <p>Oops, some error occured... {error}</p>}
+
+      <ImageGallery images={images} />
+      {isMore && <LoadMoreBtn handleLoadMore={handleLoadMore} />}
+    </div>
+  );
+};
