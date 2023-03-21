@@ -44,7 +44,7 @@ export const App = () => {
         }
 
         setIsMore(fetchedImages.totalHits - page * PER_PAGE > 0);
-        setImages([...images, ...fetchedImages.hits]);
+        setImages(prev => [...prev, ...fetchedImages.hits]);
       } catch (error) {
         setError(error.message);
       } finally {
@@ -53,8 +53,6 @@ export const App = () => {
     };
 
     fetchImages();
-
-    // eslint-disable-next-line
   }, [query, page]);
 
   return (
