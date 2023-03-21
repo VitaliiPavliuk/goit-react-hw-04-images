@@ -16,7 +16,7 @@ export const App = () => {
   const [error, setError] = useState(null);
 
   const handleLoadMore = () => {
-    setPage(page + 1);
+    setPage(prev => prev + 1);
   };
 
   const handleSetSearchQuery = searchTerm => {
